@@ -1,8 +1,9 @@
 local M = {}
 
 M.defaults = {
-  endpoint = "http://127.0.0.1:11434/v1/chat/completions",
-  model = "qwen2.5-coder:1.5b",
+  -- Default to llama.cpp's default port
+  endpoint = "http://127.0.0.1:8080/v1/chat/completions",
+  model = "local",
   api_key = nil,
   debounce_ms        = 150,
   max_context_chars  = 1200,
@@ -16,7 +17,8 @@ M.defaults = {
   british_english    = true,
 }
 
-M.options = {}
+-- FIX: Initialize with defaults immediately so the plugin works even if setup() isn't called
+M.options = vim.deepcopy(M.defaults)
 
 function M.setup(opts)
   opts = opts or {}
