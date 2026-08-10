@@ -96,7 +96,7 @@ function Source:get_completions(ctx, callback)
         callback({ items = {}, is_incomplete_forward = false })
         return
       end
-
+      print("[LocalLLM] Raw HTTP Response: " .. vim.inspect(resp))
       local words = parse.parse_words(resp)
       local valid = validate.filter_candidates(words, prefix_info.prefix, {
         allow_hyphenated = self.opts.allow_hyphenated,
