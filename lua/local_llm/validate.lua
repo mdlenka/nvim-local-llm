@@ -49,16 +49,21 @@ function M.validate_candidate(word, prefix, opts)
 	-- If there is a prefix, ensure the final output starts with it
 	if pl and pl ~= "" then
 		if wl:sub(1, #pl) ~= pl then
-			-- LLM returned a suffix or next word instead of the full text.
-			-- We will reconstruct it by prepending the prefix.
-			if pl:sub(-1):match("[%w]") and wl:sub(1, 1):match("[%w]") then
-				-- e.g., prefix="s", word="ystem" -> "system"
-				word = prefix .. word
+			-- LLM returned a suffix for the first word. Reconstruct it.
+			local first_word, rest = word:match("^(%S+)(.*)$")
+			if first_word then
+				if pl:sub(-1):match("[%w]") and first_word:sub(1, 1):match("[%w]") then
+					-- e.g., prefix="scat", word="tering tomography" -> "scattering tomography"
+					word = prefix .. first_word .. (rest or "")
+				else
+					-- e.g., prefix="This", word="sentence continues" -> "This sentence continues"
+					word = prefix .. " " .. first_word .. (rest or "")
+				end
+				wl = word:lower()
 			else
-				-- e.g., prefix="This", word="sentence" -> "This sentence"
-				word = prefix .. " " .. word
+				word = prefix .. word
+				wl = word:lower()
 			end
-			wl = word:lower()
 		end
 
 		if wl == pl then

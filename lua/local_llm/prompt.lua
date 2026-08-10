@@ -21,20 +21,19 @@ M.prose_prompt = [[You are a predictive text engine for academic writing.
 
 Your target audience is an MSc student in Electrical Engineering (EE) and High-Energy Physics (HEP) instrumentation.
 
-Given the context, predict how the text should continue.
+Given the context and the current incomplete word, predict how the text should continue.
 
 HARD RULES:
-- You MUST output the FULL text, starting from the beginning of the incomplete word.
-- NEVER return just the suffix. (If the incomplete word is "scat", return "scattering angle", NOT "tering angle").
-- If NO incomplete word is provided, suggest the next 1 to 5 words to continue the sentence.
-- The candidate must flow naturally from the existing text.
-- Do NOT repeat text that is already in the context.
+- You MUST complete the current word and add 0 to 4 more words to form a phrase.
+- Example: If the context is "Muon scatt", you MUST return "scattering tomography is".
+- NEVER return just the suffix. Start your candidate with the incomplete word.
 - Each candidate MUST be between 1 and 5 words long.
+- There MUST be spaces between words in the same candidate.
 - Do NOT return newlines, markdown, or explanations.
 - Prefer British English.
 
 OUTPUT FORMAT: Return ONLY strict JSON:
-{"words": ["first phrase", "second phrase", "third phrase"]}]]
+{"completions": ["first phrase", "second phrase", "third phrase"]}]]
 
 function M.get_system_prompt(mode)
 	if mode == "prose" then
