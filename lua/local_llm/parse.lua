@@ -54,6 +54,9 @@ function M.parse_words(resp)
 		return {}
 	end
 
+	-- Strip reasoning/thinking blocks produced by models like DeepSeek R1
+	content = content:gsub("<think>.-</think>", "")
+
 	local direct = try_decode(content)
 	if direct then
 		return direct
@@ -67,7 +70,8 @@ function M.parse_words(resp)
 		end
 	end
 
-	local obj = content:match("{.*}")
+	-- Use balanced brace/bracket extraction to prevent greedy wildcard failures
+	local obj = content:match("%b{}")
 	if obj then
 		local o = try_decode(obj)
 		if o then
@@ -75,7 +79,7 @@ function M.parse_words(resp)
 		end
 	end
 
-	local arr = content:match("%[.*%]")
+	local arr = content:match("%b[]")
 	if arr then
 		local a = try_decode(arr)
 		if a then

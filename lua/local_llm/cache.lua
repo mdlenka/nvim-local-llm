@@ -9,7 +9,7 @@ function M.new(max_size)
 end
 
 function M:key(model, context, prefix)
-	return model .. "\0" .. context .. "\0" .. prefix
+	return (model or "") .. "\0" .. (context or "") .. "\0" .. (prefix or "")
 end
 
 function M:get(key)
@@ -29,8 +29,12 @@ end
 
 function M:set(key, value)
 	if self.entries[key] then
-		self.entries[key] = value
-		return
+		for i, k in ipairs(self.order) do
+			if k == key then
+				table.remove(self.order, i)
+				break
+			end
+		end
 	end
 	self.entries[key] = value
 	table.insert(self.order, key)

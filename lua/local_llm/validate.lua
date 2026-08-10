@@ -1,6 +1,7 @@
 local M = {}
 
 function M.validate_candidate(word, prefix, opts)
+	opts = opts or {}
 	if type(word) ~= "string" then
 		return nil
 	end
@@ -12,7 +13,8 @@ function M.validate_candidate(word, prefix, opts)
 	if opts.completion_mode == "prose" then
 		pattern = "[%w%p%s]+"
 	else
-		pattern = opts.allow_hyphenated and "[%w][%w%-]*[%w]" or "[%w]+"
+		-- Match alphanumeric words, including single characters and hyphenated terms
+		pattern = opts.allow_hyphenated and "[%w%-]+" or "[%w]+"
 	end
 
 	local matched = word:match(pattern)
@@ -43,6 +45,7 @@ function M.validate_candidate(word, prefix, opts)
 		end
 	end
 
+	prefix = prefix or ""
 	local pl = prefix:lower()
 	local wl = word:lower()
 
@@ -52,8 +55,10 @@ function M.validate_candidate(word, prefix, opts)
 			-- LLM returned a suffix for the first word. Reconstruct it.
 			local first_word, rest = word:match("^(%S+)(.*)$")
 			if first_word then
-				if pl:sub(-1):match("[%w]") and first_word:sub(1, 1):match("[%w]") then
+				local last_char = pl:sub(-1)
+				if (last_char:match("[%w]") or last_char == "-") and first_word:sub(1, 1):match("[%w]") then
 					-- e.g., prefix="scat", word="tering tomography" -> "scattering tomography"
+					-- e.g., prefix="high-", word="energy" -> "high-energy"
 					word = prefix .. first_word .. (rest or "")
 				else
 					-- e.g., prefix="This", word="sentence continues" -> "This sentence continues"

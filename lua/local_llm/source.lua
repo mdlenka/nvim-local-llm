@@ -59,10 +59,14 @@ function Source:get_completions(ctx, callback)
 	local timer
 	local client_cancel
 
+	if not ctx or not ctx.cursor then
+		callback({ items = {}, is_incomplete_forward = false })
+		return function() end
+	end
+
 	local prefix_info = context.get_prefix_from_ctx(ctx)
 
 	if not prefix_info then
-		-- If no prefix, we are at a space. Allow predicting the next word.
 		prefix_info = {
 			prefix = "",
 			start_col = ctx.cursor[2],
@@ -71,7 +75,9 @@ function Source:get_completions(ctx, callback)
 		}
 	end
 
-	local ctx_text = context.get_context(ctx.bufnr, ctx.cursor, self.opts.max_context_chars) or ""
+	-- Pass completion_mode into get_context to determine mode-specific context retrieval
+	local ctx_text = context.get_context(ctx.bufnr, ctx.cursor, self.opts.completion_mode, self.opts.max_context_chars)
+		or ""
 	local prefix = prefix_info.prefix or ""
 
 	local cache_key = self.cache:key(self.opts.model, ctx_text, prefix)
@@ -127,7 +133,12 @@ function Source:get_completions(ctx, callback)
 	return function()
 		cancelled = true
 		if timer then
-			timer:stop()
+			pcall(function()
+				timer:stop()
+				if not timer:is_closing() then
+					timer:close()
+				end
+			end)
 			timer = nil
 		end
 		if client_cancel then
