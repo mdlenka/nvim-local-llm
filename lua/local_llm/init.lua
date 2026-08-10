@@ -10,7 +10,7 @@ end
 function M.new(opts)
   local merged = vim.tbl_deep_extend(
     "force",
-    vim.deepcopy(config.options or config.defaults),
+    vim.deepcopy(config.options),
     opts or {}
   )
   return source_mod.new(merged)
