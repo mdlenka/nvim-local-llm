@@ -16,7 +16,11 @@ function M.get_prefix_from_line(line, col)
 end
 
 function M.get_prefix_from_ctx(ctx)
-  local info = M.get_prefix_from_line(ctx.line_before_cursor, #ctx.line_before_cursor)
+  -- FIX: blink.cmp provides the full line in ctx.line, and 0-based byte col in ctx.cursor[2]
+  local line = ctx.line or ""
+  local col = ctx.cursor[2]
+  
+  local info = M.get_prefix_from_line(line, col)
   if not info then return nil end
   info.line = ctx.cursor[1]
   return info
