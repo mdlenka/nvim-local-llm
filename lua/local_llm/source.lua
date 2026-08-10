@@ -92,6 +92,7 @@ function Source:get_completions(ctx, callback)
       if cancelled then return end
 
       if err or not resp then
+        print("[LocalLLM] Request failed: " .. tostring(err))
         callback({ items = {}, is_incomplete_forward = false })
         return
       end
@@ -100,6 +101,11 @@ function Source:get_completions(ctx, callback)
       local valid = validate.filter_candidates(words, prefix_info.prefix, {
         allow_hyphenated = self.opts.allow_hyphenated,
       })
+
+      -- DEBUG LOGGING
+      print("[LocalLLM] Prefix: '" .. prefix_info.prefix .. "'")
+      print("[LocalLLM] Raw parsed words: " .. vim.inspect(words))
+      print("[LocalLLM] Valid words: " .. vim.inspect(valid))
 
       self.cache:set(cache_key, valid)
       callback({ items = build_items(valid, prefix_info), is_incomplete_forward = true })
