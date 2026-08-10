@@ -16,7 +16,7 @@ return {
   version = "*",
   dependencies = {
     {
-      "yourname/nvim-local-llm",
+      "mdlenka/nvim-local-llm",
       config = function()
         require("local_llm").setup({
           endpoint         = "http://127.0.0.1:11434/v1/chat/completions",
