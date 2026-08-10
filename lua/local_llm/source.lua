@@ -113,9 +113,12 @@ function Source:get_completions(ctx, callback)
 			end
 
 			if err or not resp then
+				print("[LocalLLM] Request failed: " .. tostring(err))
+				callback({ items = {}, is_incomplete_forward = false })
 				callback({ items = {}, is_incomplete_forward = false })
 				return
 			end
+			print("[LocalLLM] Raw HTTP Response: " .. vim.inspect(resp))
 
 			local words = parse.parse_words(resp)
 			local valid = validate.filter_candidates(words, prefix, {
@@ -124,6 +127,8 @@ function Source:get_completions(ctx, callback)
 				max_words = self.opts.max_words,
 			})
 
+			print("[LocalLLM] Parsed words: " .. vim.inspect(words))
+			print("[LocalLLM] Valid words: " .. vim.inspect(valid))
 			self.cache:set(cache_key, valid)
 			callback({ items = build_items(valid, prefix_info), is_incomplete_forward = true })
 		end)
