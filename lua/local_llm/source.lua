@@ -115,6 +115,8 @@ function Source:get_completions(ctx, callback)
 			end
 
 			local words = parse.parse_words(resp)
+			print("[LocalLLM] Prefix: '" .. prefix .. "'")
+			print("[LocalLLM] Parsed words: " .. vim.inspect(words))
 			local valid = validate.filter_candidates(words, prefix, {
 				allow_hyphenated = self.opts.allow_hyphenated,
 				completion_mode = self.opts.completion_mode,
