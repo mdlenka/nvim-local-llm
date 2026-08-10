@@ -60,13 +60,26 @@ function Source:get_completions(ctx, callback)
 	local client_cancel
 
 	local prefix_info = context.get_prefix_from_ctx(ctx)
-	if not prefix_info or prefix_info.prefix == "" or #prefix_info.prefix < 1 then
-		callback({ items = {}, is_incomplete_forward = false })
-		return function() end
+
+	if not prefix_info then
+		if self.opts.completion_mode == "prose" then
+			prefix_info = {
+				prefix = "",
+				start_col = ctx.cursor[2],
+				end_col = ctx.cursor[2],
+				line = ctx.cursor[1],
+			}
+		else
+			callback({ items = {}, is_incomplete_forward = false })
+			return function() end
+		end
 	end
 
-	local ctx_text = context.get_context(ctx.bufnr, ctx.cursor, self.opts.max_context_chars)
-	local cache_key = self.cache:key(self.opts.model, ctx_text, prefix_info.prefix)
+	-- GUARANTEE: Ensure ctx_text and prefix are never nil
+	local ctx_text = context.get_context(ctx.bufnr, ctx.cursor, self.opts.max_context_chars) or ""
+	local prefix = prefix_info.prefix or ""
+
+	local cache_key = self.cache:key(self.opts.model, ctx_text, prefix)
 	local cached = self.cache:get(cache_key)
 
 	if cached then
@@ -75,8 +88,8 @@ function Source:get_completions(ctx, callback)
 	end
 
 	local messages = {
-		{ role = "system", content = prompt.system_prompt },
-		{ role = "user", content = prompt.build_user_prompt(ctx_text, prefix_info.prefix) },
+		{ role = "system", content = prompt.get_system_prompt(self.opts.completion_mode) },
+		{ role = "user", content = prompt.build_user_prompt(ctx_text, prefix) },
 	}
 
 	timer = vim.defer_fn(function()
@@ -105,13 +118,10 @@ function Source:get_completions(ctx, callback)
 			end
 
 			local words = parse.parse_words(resp)
-			--local valid = validate.filter_candidates(words, prefix_info.prefix, {
-			--  allow_hyphenated = self.opts.allow_hyphenated,
-			--})
-			local valid = validate.filter_candidates(words, prefix_info.prefix, {
+			local valid = validate.filter_candidates(words, prefix, {
 				allow_hyphenated = self.opts.allow_hyphenated,
 				completion_mode = self.opts.completion_mode,
-				max_words = self.opts.max_words, -- Add this line
+				max_words = self.opts.max_words,
 			})
 
 			self.cache:set(cache_key, valid)
@@ -131,5 +141,4 @@ function Source:get_completions(ctx, callback)
 		end
 	end
 end
-
 return Source
