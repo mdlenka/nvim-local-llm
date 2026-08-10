@@ -10,7 +10,7 @@ If you type `scat`, the only acceptable completions are full words like
 
 ## Installation (lazy.nvim)
 
-\`\`\`lua
+```lua
 return {
   "Saghen/blink.cmp",
   version = "*",
@@ -42,4 +42,4 @@ return {
     },
   },
 }
-\`\`\`
+```
