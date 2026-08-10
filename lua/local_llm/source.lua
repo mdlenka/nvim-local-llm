@@ -18,6 +18,8 @@ function Source.new(opts)
 end
 
 function Source:get_trigger_characters()
+	-- Removed " " so it doesn't break your Space leader key.
+	-- blink.cmp will trigger automatically on letter typing, or via <C-space>.
 	return {}
 end
 
@@ -61,21 +63,16 @@ function Source:get_completions(ctx, callback)
 
 	local prefix_info = context.get_prefix_from_ctx(ctx)
 
+	-- If no prefix (cursor is on a space), we can still predict the next word/phrase
 	if not prefix_info then
-		if self.opts.completion_mode == "prose" then
-			prefix_info = {
-				prefix = "",
-				start_col = ctx.cursor[2],
-				end_col = ctx.cursor[2],
-				line = ctx.cursor[1],
-			}
-		else
-			callback({ items = {}, is_incomplete_forward = false })
-			return function() end
-		end
+		prefix_info = {
+			prefix = "",
+			start_col = ctx.cursor[2],
+			end_col = ctx.cursor[2],
+			line = ctx.cursor[1],
+		}
 	end
 
-	-- GUARANTEE: Ensure ctx_text and prefix are never nil
 	local ctx_text = context.get_context(ctx.bufnr, ctx.cursor, self.opts.max_context_chars) or ""
 	local prefix = prefix_info.prefix or ""
 
@@ -113,12 +110,9 @@ function Source:get_completions(ctx, callback)
 			end
 
 			if err or not resp then
-				print("[LocalLLM] Request failed: " .. tostring(err))
-				callback({ items = {}, is_incomplete_forward = false })
 				callback({ items = {}, is_incomplete_forward = false })
 				return
 			end
-			print("[LocalLLM] Raw HTTP Response: " .. vim.inspect(resp))
 
 			local words = parse.parse_words(resp)
 			local valid = validate.filter_candidates(words, prefix, {
@@ -127,8 +121,6 @@ function Source:get_completions(ctx, callback)
 				max_words = self.opts.max_words,
 			})
 
-			print("[LocalLLM] Parsed words: " .. vim.inspect(words))
-			print("[LocalLLM] Valid words: " .. vim.inspect(valid))
 			self.cache:set(cache_key, valid)
 			callback({ items = build_items(valid, prefix_info), is_incomplete_forward = true })
 		end)
@@ -146,4 +138,5 @@ function Source:get_completions(ctx, callback)
 		end
 	end
 end
+
 return Source
