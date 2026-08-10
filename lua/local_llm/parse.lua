@@ -16,11 +16,18 @@ function M.parse_words(resp)
   local content
   if resp.choices and resp.choices[1] and resp.choices[1].message then
     content = resp.choices[1].message.content
+    
+    -- If the model is a reasoning model (like Gemma-4-E4B-it), it might put 
+    -- the answer in reasoning_content if it runs out of tokens before the final output.
+    if type(content) ~= "string" or content == "" then
+      content = resp.choices[1].message.reasoning_content
+    end
   elseif type(resp.content) == "string" then
     content = resp.content
   elseif type(resp.text) == "string" then
     content = resp.text
   end
+  
   if type(content) ~= "string" or content == "" then return {} end
 
   local direct = try_decode(content)
