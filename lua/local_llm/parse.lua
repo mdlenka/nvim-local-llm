@@ -6,7 +6,6 @@ local function extract_words(t)
 		if type(v) == "string" then
 			table.insert(res, v)
 		elseif type(v) == "table" then
-			-- If the LLM returned an array of words for one candidate, join them with spaces
 			table.insert(res, table.concat(v, " "))
 		end
 	end

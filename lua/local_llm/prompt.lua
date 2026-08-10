@@ -25,15 +25,15 @@ Given the context and the current incomplete word, predict how the text should c
 
 HARD RULES:
 - You MUST complete the current word and add 0 to 4 more words to form a phrase.
-- Example: If the context is "Muon scatt", you MUST return "scattering tomography is".
-- NEVER return just the suffix. Start your candidate with the incomplete word.
+- Example: If context is "Muon scatt", you MUST return "scattering tomography is", NOT "tering tomography is".
+- You MUST start your candidate with the exact incomplete word provided.
+- The candidate must flow naturally from the existing paragraph.
 - Each candidate MUST be between 1 and 5 words long.
-- There MUST be spaces between words in the same candidate.
 - Do NOT return newlines, markdown, or explanations.
 - Prefer British English.
 
 OUTPUT FORMAT: Return ONLY strict JSON:
-{"completions": ["first phrase", "second phrase", "third phrase"]}]]
+{"completions": ["first phrase", "second phrase"]}]]
 
 function M.get_system_prompt(mode)
 	if mode == "prose" then
@@ -46,7 +46,7 @@ function M.build_user_prompt(context, prefix)
 	if prefix and prefix ~= "" then
 		return string.format("Context:\n%s\n\nCurrent incomplete word:\n%s", context, prefix)
 	end
-	return string.format("Context:\n%s\n\nSuggest the next phrase to continue the sentence:", context)
+	return string.format("Context:\n%s\n\nSuggest the next phrase to continue the paragraph:", context)
 end
 
 return M

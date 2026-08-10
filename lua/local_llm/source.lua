@@ -18,8 +18,6 @@ function Source.new(opts)
 end
 
 function Source:get_trigger_characters()
-	-- Removed " " so it doesn't break your Space leader key.
-	-- blink.cmp will trigger automatically on letter typing, or via <C-space>.
 	return {}
 end
 
@@ -63,8 +61,8 @@ function Source:get_completions(ctx, callback)
 
 	local prefix_info = context.get_prefix_from_ctx(ctx)
 
-	-- If no prefix (cursor is on a space), we can still predict the next word/phrase
 	if not prefix_info then
+		-- If no prefix, we are at a space. Allow predicting the next word.
 		prefix_info = {
 			prefix = "",
 			start_col = ctx.cursor[2],
@@ -115,8 +113,6 @@ function Source:get_completions(ctx, callback)
 			end
 
 			local words = parse.parse_words(resp)
-			print("[LocalLLM] Prefix: '" .. prefix .. "'")
-			print("[LocalLLM] Parsed words: " .. vim.inspect(words))
 			local valid = validate.filter_candidates(words, prefix, {
 				allow_hyphenated = self.opts.allow_hyphenated,
 				completion_mode = self.opts.completion_mode,
