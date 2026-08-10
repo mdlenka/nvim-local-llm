@@ -1,53 +1,84 @@
 local M = {}
 
 function M.validate_candidate(word, prefix, opts)
-  if type(word) ~= "string" then return nil end
+	if type(word) ~= "string" then
+		return nil
+	end
 
-  -- 1. Strip surrounding quotes (sometimes LLMs wrap output)
-  word = word:gsub('^"(.*)"$', "%1"):gsub("^'(.*)'$", "%1")
+	-- Strip quotes
+	word = word:gsub('^"(.*)"$', "%1"):gsub("^'(.*)'$", "%1")
 
-  -- 2. Extract ONLY the valid word characters.
-  -- This automatically strips hidden Unicode spaces, markdown, and punctuation!
-  local pattern = opts.allow_hyphenated and "[%w][%w%-]*[%w]" or "[%w]+"
-  local matched = word:match(pattern) or word:match("[%w]")
-  if not matched then return nil end
-  word = matched
+	local pattern
+	if opts.completion_mode == "prose" then
+		-- Allow letters, numbers, spaces, and basic sentence punctuation
+		pattern = "[%w%p%s]+"
+	else
+		pattern = opts.allow_hyphenated and "[%w][%w%-]*[%w]" or "[%w]+"
+	end
 
-  -- 3. Reject newlines / multi-line output (should be gone, but just in case)
-  if word:match("[\r\n]") then return nil end
+	local matched = word:match(pattern)
+	if not matched then
+		return nil
+	end
+	word = matched
 
-  -- 4. Reject internal whitespace
-  if word:match("%s") then return nil end
+	-- Trim leading/trailing whitespace
+	word = word:match("^%s*(.-)%s*$")
+	if not word or word == "" then
+		return nil
+	end
 
-  local pl = prefix:lower()
-  local wl = word:lower()
+	-- Strictly reject newlines and markdown in all modes
+	if word:match("[\r\n]") then
+		return nil
+	end
+	if word:match("[%*`_#%[%]!]") then
+		return nil
+	end
 
-  -- 5. The candidate must START WITH the prefix (case-insensitive).
-  if #wl < #pl then return nil end
-  if wl:sub(1, #pl) ~= pl then return nil end
+	-- Enforce max_words limit in prose mode
+	if opts.completion_mode == "prose" and opts.max_words then
+		-- Count words by counting sequences of non-whitespace characters
+		local _, count = word:gsub("%S+", "")
+		if count > opts.max_words then
+			return nil
+		end
+	end
 
-  -- 6. Reject the prefix itself (no useful completion)
-  if wl == pl then return nil end
+	local pl = prefix:lower()
+	local wl = word:lower()
 
-  -- 7. Reject obvious prefix duplication like "scatscat"
-  if #wl == 2 * #pl and wl == pl .. pl then return nil end
+	-- If there is a prefix, the candidate MUST START WITH it
+	if pl and pl ~= "" then
+		if #wl < #pl then
+			return nil
+		end
+		if wl:sub(1, #pl) ~= pl then
+			return nil
+		end
+		if wl == pl then
+			return nil
+		end
+	end
 
-  return word
+	return word
 end
 
 function M.filter_candidates(words, prefix, opts)
-  opts = opts or {}
-  local out = {}
-  local seen = {}
-  for _, w in ipairs(words or {}) do
-    local v = M.validate_candidate(w, prefix, opts)
-    if v and not seen[v:lower()] then
-      seen[v:lower()] = true
-      table.insert(out, v)
-    end
-    if #out >= 10 then break end
-  end
-  return out
+	opts = opts or {}
+	local out = {}
+	local seen = {}
+	for _, w in ipairs(words or {}) do
+		local v = M.validate_candidate(w, prefix, opts)
+		if v and not seen[v:lower()] then
+			seen[v:lower()] = true
+			table.insert(out, v)
+		end
+		if #out >= 5 then
+			break
+		end
+	end
+	return out
 end
 
 return M
